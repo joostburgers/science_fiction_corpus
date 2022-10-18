@@ -28,3 +28,4 @@ vignettes/*.pdf
 .Renviron
 female_texts.txt
 data
+data.zip

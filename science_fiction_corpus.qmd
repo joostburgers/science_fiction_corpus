@@ -62,6 +62,30 @@ male_df_collapse <- male_df_cache %>%
 ```
 
 ```{r}
+df_stripped <- male_df_collapse %>%
+  group_by(author,  title) %>%
+  unnest_lines(line, full_text) 
+  mutate(line_nr = row_number()) %>% #add line number by work
+  mutate(header = ifelse(
+    str_detect(line, "start of this project gutenberg") == TRUE,
+    row_number(),
+    ""
+  )) %>% #find line in each book that starts with start of this project gutenberg...
+  mutate(footer = ifelse(
+    str_detect(line, "end of this project gutenberg") == TRUE,
+    row_number(),
+    ""
+  )) %>% #find line that starts with end of this project...
+  mutate(header_nr = max(header)) %>% #get header location by work
+  mutate(footer_nr = max(footer)) %>% #get footer location by work
+  filter(line_nr > header_nr & line_nr < footer_nr) %>% #filter out only that text between header and footer
+  select (author, title, line) #delete helper columns
+```
+
+
+
+
+```{r}
 female_df <- gutenberg_download(female_sf$gutenberg_id)
 ```
 
@@ -96,7 +120,7 @@ male_df_collapse <- male_df_collapse %>%
 
 ```{r}
 for (i in 1:nrow(male_df_collapse)) {
-      write(male_df_collapse$full_text[i], paste0("data/works/male/",  male_df_collapse$author[i], " - ", substr(male_df_collapse$title[i],1,15), ".txt"))
+      write(male_df_collapse$full_text[i], paste0("data/works/male/", "Male - ", male_df_collapse$author[i], " - ", substr(male_df_collapse$title[i],1,15), ".txt"))
  }
 ```
 
@@ -109,7 +133,7 @@ male_df_authors <- male_df_collapse %>%
 
 ```{r}
 for (i in 1:nrow(male_df_authors)) {
-      write(male_df_authors$full_text[i], paste0("data/authors/male/",
+      write(male_df_authors$full_text[i], paste0("data/authors/male/", "Male - ",
                  male_df_authors$author[i], ".txt"))
  }
 ```
@@ -117,7 +141,7 @@ for (i in 1:nrow(male_df_authors)) {
 
 ```{r}
 for (i in 1:nrow(female_df_collapse)) {
-      write(female_df_collapse$full_text[i], paste0("data/works/female/",  female_df_collapse$author[i], " - ",                 female_df_collapse$title[i], ".txt"))
+      write(female_df_collapse$full_text[i], paste0("data/works/female/", "Female - ", female_df_collapse$author[i], " - ",                 female_df_collapse$title[i], ".txt"))
  }
 ```
 
@@ -131,7 +155,7 @@ female_df_authors <- female_df_collapse %>%
 
 ```{r}
 for (i in 1:nrow(female_df_authors)) {
-      write(female_df_authors$full_text[i], paste0("data/authors/female/",
+      write(female_df_authors$full_text[i], paste0("data/authors/female/", "Female - ",
                  female_df_authors$author[i], ".txt"))
  }
 ```
