@@ -1,0 +1,157 @@
+---
+title: "Science Fiction Corpus"
+format: html
+editor: visual
+---
+
+#Introduction
+
+Load libraries...
+
+```{r}
+library(gutenbergr)
+library(tidytext)
+library(tidyverse)
+
+
+```
+
+
+```{r}
+science_fiction_titles <- gutenberg_metadata %>% 
+  filter(str_detect(gutenberg_bookshelf,"Science Fiction"))
+```
+
+
+```{r}
+male_sf <- science_fiction_titles %>% 
+            filter(!str_detect(gutenberg_bookshelf,"Women")) %>% 
+            filter(!str_detect(gutenberg_bookshelf,"Precursor")) %>% 
+            filter(!str_detect(gutenberg_bookshelf,"FR")) 
+```
+
+
+```{r}
+female_sf <- science_fiction_titles %>% 
+              filter(str_detect(gutenberg_bookshelf,"Women")) %>% 
+                 filter(!str_detect(gutenberg_bookshelf,"Precursor"))
+```
+
+```{r}
+male_df <- gutenberg_download(male_sf$gutenberg_id)
+```
+
+```{r}
+write_csv(male_df,"data/male_df.csv")
+
+```
+```{r}
+male_df_cache <- read_csv("data/male_df.csv")
+```
+
+
+```{r}
+male_df_collapse <- male_df_cache %>%  
+                    group_by(gutenberg_id) %>% 
+                    summarise(full_text = toString(text)) %>% 
+                    left_join(gutenberg_metadata) %>% 
+                    arrange(author) %>% 
+                    mutate(title = str_replace_all(title, "[[:punct:]]", "")) %>% drop_na(full_text)
+
+
+```
+
+```{r}
+female_df <- gutenberg_download(female_sf$gutenberg_id)
+```
+
+```{r}
+write_csv(female_df,"data/female_df.csv")
+
+```
+
+```{r}
+female_df_collapse <- female_df %>%  
+                    group_by(gutenberg_id) %>% 
+                    summarise(full_text = toString(text)) %>% 
+                    left_join(gutenberg_metadata) 
+```
+
+Text by works
+
+```{r}
+male_df_collapse <- male_df_collapse %>% 
+                    filter(!str_detect(title,"Blindmans World")) %>% 
+                    filter(!str_detect(title,"Brood of the Dark")) %>% 
+                    filter(!str_detect(title,"Pharaohs Broker")) %>% 
+  filter(!str_detect(title,"The Fantasy Fan November 1933")) %>% 
+   filter(!str_detect(title,"The Fantasy Fan December 1933")) %>% 
+ filter(!str_detect(title,"Night Mail")) %>% 
+  filter(!str_detect(title,"Through the Air to the North")) %>% 
+  filter(!str_detect(title,"Other Worlds Their Nature")) %>% 
+  filter(!str_detect(author, "Putman"))
+```
+
+
+
+```{r}
+for (i in 1:nrow(male_df_collapse)) {
+      write(male_df_collapse$full_text[i], paste0("data/works/male/",  male_df_collapse$author[i], " - ", substr(male_df_collapse$title[i],1,15), ".txt"))
+ }
+```
+
+
+```{r}
+male_df_authors <- male_df_collapse %>% 
+                    group_by(author) %>% 
+                    summarise(full_text = toString(full_text))
+```
+
+```{r}
+for (i in 1:nrow(male_df_authors)) {
+      write(male_df_authors$full_text[i], paste0("data/authors/male/",
+                 male_df_authors$author[i], ".txt"))
+ }
+```
+
+
+```{r}
+for (i in 1:nrow(female_df_collapse)) {
+      write(female_df_collapse$full_text[i], paste0("data/works/female/",  female_df_collapse$author[i], " - ",                 female_df_collapse$title[i], ".txt"))
+ }
+```
+
+
+
+```{r}
+female_df_authors <- female_df_collapse %>% 
+                    group_by(author) %>% 
+                    summarise(full_text = toString(full_text))
+```
+
+```{r}
+for (i in 1:nrow(female_df_authors)) {
+      write(female_df_authors$full_text[i], paste0("data/authors/female/",
+                 female_df_authors$author[i], ".txt"))
+ }
+```
+
+
+```{r}
+all_female <- female_df_authors %>% 
+              summarise(full_text = toString(full_text))
+```
+
+```{r}
+write(all_female$full_text, "data/gender/female/female_texts.txt")
+```
+
+```{r}
+all_male <- male_df_authors %>% 
+            summarise(full_text = toString(full_text))
+```
+
+```{r}
+write(all_male$full_text, "data/gender/male/male_texts.txt")
+```
+
